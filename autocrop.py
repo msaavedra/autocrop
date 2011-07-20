@@ -77,7 +77,7 @@ else:
     if not os.path.exists(target):
         os.makedirs(target)
     for crop in MultiPartImage(image, background,
-            options.resolution, options.precision, not options.deskew):
+            options.resolution, options.precision, not options.disable_deskew):
         file_name = '%s%s.png' % (date_name, letters[count])
         full_path = os.path.join(target, file_name)
         crop.save(full_path)
