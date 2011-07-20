@@ -1,0 +1,7 @@
+This is a package to crop smaller photos out of a larger image. The
+typical use would be to load a scanner with several photos, and let
+this code find the photos and save them independently.
+
+Also included is a simple linux command-line script to initiate a scan
+and handle the cropping. It should be considered a demonstration of the
+package, not a utility for general wide-spread use.
