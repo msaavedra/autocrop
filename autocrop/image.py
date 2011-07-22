@@ -10,16 +10,8 @@ class MultiPartImage(object):
     that were scanned simultaneously in a flat-bed scanner..
     """
     def __init__(self, image, background, dpi, precision=16,
-            deskew=True, contrast='medium'):
-        contrast = contrast.lower()
-        if contrast == 'high':
-            self.spread = 5
-        elif contrast == 'medium':
-            self.spread = 10
-        elif contrast == 'low':
-            self.spread = 15
-        else:
-            raise StandardError('contrast must be either low, medium, or high.')
+            deskew=True, contrast=10):
+        self.contrast = contrast
         self.image = image
         self.dpi = dpi
         self.width, self.height = image.size
@@ -36,7 +28,7 @@ class MultiPartImage(object):
                 )
             if self.deskew:
                 skew = SkewedImage(
-                    image, self.background, self.precision/3, self.spread
+                    image, self.background, self.precision/2, self.contrast
                     )
                 image = skew.correct()
             yield image
@@ -48,7 +40,7 @@ class MultiPartImage(object):
         sections = []
         for (x, y, red, green, blue) in self.samples:
             # Skip if the sample is background or is already in a section.
-            if self.background.matches(red, green, blue, self.spread):
+            if self.background.matches(red, green, blue, self.contrast):
                 continue
             if True in (section.contains(x,y) for section in sections):
                 continue
@@ -61,7 +53,7 @@ class MultiPartImage(object):
                 for x, y, r, g, b in self.samples.around(*coords):
                     if (x, y) not in pixels:
                         pixels.add((x, y))
-                        if not self.background.matches(r, g, b, self.spread+5):
+                        if not self.background.matches(r, g, b, self.contrast):
                             seeds.append((x, y))
             new_section = ImageSection(pixels)
             

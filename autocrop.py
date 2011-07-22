@@ -36,8 +36,8 @@ parser.add_argument(
     help='The scanner to use. If not specified, the system default is used.'
     )
 parser.add_argument(
-    '-c', '--contrast', nargs='?', default='medium',
-    help='The amount of contrast (either high, medium, or low) between background and foreground. (default: medium).'
+    '-c', '--contrast', nargs='?', type=int, default=10,
+    help='The amount of contrast (1-10) between background and foreground. (default: 5).'
     )
 parser.add_argument(
     '-d', '--disable-deskew', action='store_true',
@@ -48,6 +48,9 @@ parser.add_argument(
     help='The destination directory of the cropped photos (default: the current working directory).'
     )
 options = parser.parse_args()
+
+assert 1 <= options.contrast <= 10
+options.contrast = options.contrast * 2
 
 BG_FILE = os.path.join(files.APP_CONF_DIR, 'autocrop', 'backgrounds')
 if os.path.exists(BG_FILE):
@@ -81,7 +84,8 @@ else:
     if not os.path.exists(target):
         os.makedirs(target)
     for crop in MultiPartImage(image, background,
-            options.resolution, options.precision, not options.disable_deskew):
+            options.resolution, options.precision,
+            not options.disable_deskew, options.contrast):
         file_name = '%s%s.png' % (date_name, letters[count])
         full_path = os.path.join(target, file_name)
         crop.save(full_path)

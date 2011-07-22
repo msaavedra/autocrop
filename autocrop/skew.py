@@ -6,13 +6,13 @@ from pixel_math import get_angle, get_median
 
 class SkewedImage(object):
     
-    def __init__(self, image, background, precision=8, spread=10):
+    def __init__(self, image, background, precision=8, contrast=10):
         self.image = image
         self.width, self.height = image.size
         self.background = background
         self.samples = PixelSampler(image, dpi=1, precision=1)
         self.precision = precision
-        self.spread = spread
+        self.contrast = contrast
         self.top = Orientation(
             precision=precision,
             longitudinal=self.height,
@@ -51,10 +51,10 @@ class SkewedImage(object):
         image = self.image.rotate(angle, Image.BICUBIC)
         self.samples.image = image
         image = image.crop((
-            int(get_median(self._get_side_distances(self.left))),
-            int(get_median(self._get_side_distances(self.top))),
-            self.width-int(get_median(self._get_side_distances(self.right))),
-            self.height-int(get_median(self._get_side_distances(self.bottom)))
+            min(self._get_side_distances(self.left)),
+            min(self._get_side_distances(self.top)),
+            self.width-min(self._get_side_distances(self.right)),
+            self.height-min(self._get_side_distances(self.bottom))
             ))
         return image
     
@@ -66,10 +66,10 @@ class SkewedImage(object):
             distance = 0
             for x, y, r, g, b in self.samples.run(side.perpendicular, x, y, 1):
                 if not found_background:
-                    if self.background.matches(r, g, b, self.spread):
+                    if self.background.matches(r, g, b, self.contrast):
                         found_background = True
                 else:
-                    if not self.background.matches(r, g, b, self.spread):
+                    if not self.background.matches(r, g, b, self.contrast):
                         break
                 distance += 1
             distances.append(distance)
