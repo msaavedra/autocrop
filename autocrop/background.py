@@ -9,7 +9,7 @@ from pixel_math import get_median, get_standard_deviation
 class Background(object):
     
     def __init__(self, medians=None, std_devs=None):
-        # If stats aren't available use sSome reasonable defaults (almost
+        # If stats aren't available use some reasonable defaults (almost
         # white with some variation).
         if medians:
             self.medians = medians

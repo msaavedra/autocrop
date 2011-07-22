@@ -1,6 +1,6 @@
 
 from sampler import PixelSampler
-from skew import Skew
+from skew import SkewedImage
 
 
 class MultiPartImage(object):
@@ -9,7 +9,17 @@ class MultiPartImage(object):
     This is used, for example, to detect and access multiple photos
     that were scanned simultaneously in a flat-bed scanner..
     """
-    def __init__(self, image, background, dpi, precision=8, deskew=True):
+    def __init__(self, image, background, dpi, precision=16,
+            deskew=True, contrast='medium'):
+        contrast = contrast.lower()
+        if contrast == 'high':
+            self.spread = 5
+        elif contrast == 'medium':
+            self.spread = 10
+        elif contrast == 'low':
+            self.spread = 15
+        else:
+            raise StandardError('contrast must be either low, medium, or high.')
         self.image = image
         self.dpi = dpi
         self.width, self.height = image.size
@@ -25,7 +35,9 @@ class MultiPartImage(object):
                 (section.left, section.top, section.right, section.bottom)
                 )
             if self.deskew:
-                skew = Skew(image, self.background)
+                skew = SkewedImage(
+                    image, self.background, self.precision/3, self.spread
+                    )
                 image = skew.correct()
             yield image
     
@@ -36,7 +48,7 @@ class MultiPartImage(object):
         sections = []
         for (x, y, red, green, blue) in self.samples:
             # Skip if the sample is background or is already in a section.
-            if self.background.matches(red, green, blue, 10):
+            if self.background.matches(red, green, blue, self.spread):
                 continue
             if True in (section.contains(x,y) for section in sections):
                 continue
@@ -49,7 +61,7 @@ class MultiPartImage(object):
                 for x, y, r, g, b in self.samples.around(*coords):
                     if (x, y) not in pixels:
                         pixels.add((x, y))
-                        if not self.background.matches(r, g, b, 15):
+                        if not self.background.matches(r, g, b, self.spread+5):
                             seeds.append((x, y))
             new_section = ImageSection(pixels)
             

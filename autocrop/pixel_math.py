@@ -1,6 +1,6 @@
 """Statistical and trigonometric functions to aid in image processing.
 """
-from math import atan2, cos, radians, degrees
+from math import atan2, degrees
 
 def get_median(seq):
     seq.sort()
@@ -22,7 +22,4 @@ def get_standard_deviation(seq):
 
 def get_angle(rise, run):
     return degrees(atan2(rise, run))
-
-def get_adjacent(angle, hypotenuse):
-    return int(cos(radians(angle)) * hypotenuse)
 

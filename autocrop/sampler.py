@@ -23,12 +23,16 @@ class PixelSampler(object):
         self.step = int(self.dpi / self.precision)
     
     def __iter__(self):
-        for x, y, r, g, b in self.run(self.down, 0, 0, self.step):
+        for x, y, r, g, b in self.run(self.down, self.step, self.step):
             for result in self.run(self.right, x, y, self.step):
                 yield result
     
-    def run(self, direction, x, y, distance, maximum=0):
+    def run(self, direction, x, y, distance=0, maximum=0):
+        if distance == 0:
+            distance = self.step
         count = 0
+        red, green, blue = self.data[x, y][:3]
+        yield x, y, red, green, blue
         while True:
             result = direction(x, y, distance)
             yield result

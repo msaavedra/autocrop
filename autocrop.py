@@ -36,6 +36,10 @@ parser.add_argument(
     help='The scanner to use. If not specified, the system default is used.'
     )
 parser.add_argument(
+    '-c', '--contrast', nargs='?', default='medium',
+    help='The amount of contrast (either high, medium, or low) between background and foreground. (default: medium).'
+    )
+parser.add_argument(
     '-d', '--disable-deskew', action='store_true',
     help='Do not auto-correct the rotation of the photos after cropping.'
     )
