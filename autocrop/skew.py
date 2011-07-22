@@ -12,6 +12,7 @@ class SkewedImage(object):
         self.background = background
         self.samples = PixelSampler(image, dpi=1, precision=1)
         self.precision = precision
+        self.spread = spread
         self.top = Orientation(
             precision=precision,
             longitudinal=self.height,
