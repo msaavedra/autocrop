@@ -1,3 +1,4 @@
+# Copyright 2011 Michael Saavedra
 
 from sampler import PixelSampler
 from skew import SkewedImage
@@ -6,9 +7,8 @@ from skew import SkewedImage
 class MultiPartImage(object):
     """Object for handling images that contain multiple subimages.
     
-    This is used, for example, to detect and access multiple photos
-    that were scanned simultaneously in a flat-bed scanner..
-    """
+    This is used, for example, to detect and access multiple photos that were
+    scanned simultaneously in a flat-bed scanner. """
     def __init__(self, image, background, dpi, precision=16,
             deskew=True, contrast=10):
         self.contrast = contrast
@@ -100,9 +100,9 @@ class ImageSection(object):
         """Determine the degree of overlap between this section and another.
         
         The return value is a float from 0 to 1.0 describing how much of the
-        smaller section is overlapping the larger one. A value of 0 means
-        the two are non-overlapping, while 1.0 means that the smaller is
-        completely contained by the larger.
+        smaller section is overlapping the larger one.  A value of 0 means the
+        two are non-overlapping, while 1.0 means that the smaller is completely
+        contained by the larger.
         """
         if (self.top > other.bottom):
             return 0.0

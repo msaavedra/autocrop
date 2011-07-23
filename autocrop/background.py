@@ -1,3 +1,4 @@
+# Copyright 2011 Michael Saavedra
 
 import sys
 
@@ -48,10 +49,7 @@ class Background(object):
             'green': get_standard_deviation(seq_green),
             'blue': get_standard_deviation(seq_blue),
             }
-    
-    def load_stats(self, medians, std_devs):
-        self.medians = medians
-        self.std_devs = std_devs
+        return self
     
     def matches(self, red, green, blue, spread):
         """Return True if the given color is probably part of the background.
