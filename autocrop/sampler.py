@@ -28,6 +28,10 @@ class PixelSampler(object):
             for result in self.run(self.right, x, y, self.step):
                 yield result
     
+    def update_image(self, image):
+        self.image = image
+        self.data = image.load()
+    
     def run(self, direction, x, y, distance=0, maximum=0):
         if distance == 0:
             distance = self.step

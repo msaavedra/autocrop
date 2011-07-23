@@ -50,21 +50,21 @@ class SkewedImage(object):
             angles.append(self._get_angle(distances, side.step))
         angle = get_median(angles)
         image = self.image.rotate(angle, Image.BICUBIC)
-        self.samples.image = image
+        self.samples.update_image(image)
         image = image.crop((
-            min(self._get_side_distances(self.left)),
-            min(self._get_side_distances(self.top)),
-            self.width-min(self._get_side_distances(self.right)),
-            self.height-min(self._get_side_distances(self.bottom))
+            int(get_median(self._get_side_distances(self.left))),
+            int(get_median(self._get_side_distances(self.top))),
+            self.width-int(get_median(self._get_side_distances(self.right))),
+            self.height-int(get_median(self._get_side_distances(self.bottom)))
             ))
         return image
     
     def _get_side_distances(self, side):
         distances = []
-        found_background = False
         for x, y, r, g, b in self.samples.run(side.parallel, side.x, side.y,
                                                 side.step, side.count):
             distance = 0
+            found_background = False
             for x, y, r, g, b in self.samples.run(side.perpendicular, x, y, 1):
                 if not found_background:
                     if self.background.matches(r, g, b, self.contrast):
@@ -74,6 +74,7 @@ class SkewedImage(object):
                         break
                 distance += 1
             distances.append(distance)
+        print distances
         return distances
     
     def _get_angle(self, distances, step):
