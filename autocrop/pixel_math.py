@@ -1,5 +1,8 @@
+# Copyright 2011 Michael Saavedra
+
 """Statistical and trigonometric functions to aid in image processing.
 """
+
 from math import atan2, degrees
 
 def get_median(seq):

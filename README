@@ -1,7 +1,35 @@
-This is a package to crop smaller photos out of a larger image. The
-typical use would be to load a scanner with several photos, and let
-this code find the photos and save them independently.
+This is a python package to crop smaller photos out of a larger image and
+optionally rotate crooked photos.  The typical use would be to scan several
+photos in a flatbed scanner, and use autocrop to find the photos, deskew them,
+and save them independently.
 
-Also included is a simple linux command-line script to initiate a scan
-and handle the cropping. It should be considered a demonstration of the
-package, not a utility for general wide-spread use.
+The package requires the Python Imaging Library.  It is shipped with most Linux
+distributions, but can be downloaded if needed for Linux and Windows from
+http://www.pythonware.com/products/pil/ .
+
+Basic usage of the module is as follows:
+
+# Begin code here #######################
+
+from PIL import Image
+from autocrop import MultiPartImage, Background
+
+# A saved scan with the scanner empty.
+blank_img = Image.open('/path/to/blank/scan')
+
+# A saved scan with multiple photos loaded in the scanner
+scan_img = Image.open('/path/to/scanned/image')
+
+background = Background().load_from_image(blank_img, dpi=200)
+scan = MultiPartImage(scan_img, background, dpi=200)
+for index, photo in enumerate(scan):
+    photo.save('/path/to/cropped/image-%d.jpg' % index)
+
+# End code here #########################
+
+Also included is a simple linux command-line script to initiate a scan and
+handle the cropping.  It should be considered a demonstration most of the
+capabilities of the package, not a utility for general wide-spread use.  This
+script has the additional dependency of my cross_platform package, which is
+available at https://github.com/msaavedra/cross_platform .
+

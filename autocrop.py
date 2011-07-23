@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+# Copyright 2011 Michael Saavedra
 
 import sys
 import time
@@ -36,7 +37,7 @@ parser.add_argument(
     help='The scanner to use. If not specified, the system default is used.'
     )
 parser.add_argument(
-    '-c', '--contrast', nargs='?', type=int, default=10,
+    '-c', '--contrast', nargs='?', type=int, choices=range(1,11), default=5,
     help='The amount of contrast (1-10) between background and foreground. (default: 5).'
     )
 parser.add_argument(
@@ -48,8 +49,7 @@ parser.add_argument(
     help='The destination directory of the cropped photos (default: the current working directory).'
     )
 options = parser.parse_args()
-
-assert 1 <= options.contrast <= 10
+options.deskew = not options.disable_deskew
 options.contrast = options.contrast * 2
 
 BG_FILE = os.path.join(files.APP_CONF_DIR, 'autocrop', 'backgrounds')
@@ -76,19 +76,17 @@ elif options.blank:
         bg_records[device] = (background.medians, background.std_devs)
     files.save_object(bg_records, BG_FILE)
 else:
-    letters='abcdefjhijklmnopqrstuvwxyz'
     date_name = time.strftime('%Y-%m-%d-%H%M%S', time.localtime(time.time()))
-    count = 0
+    letters=iter('abcdefjhijklmnopqrstuvwxyz')
     image = scanner.scan(options.resolution, options.scanner)
     target = os.path.abspath(options.target)
     if not os.path.exists(target):
         os.makedirs(target)
     for crop in MultiPartImage(image, background,
             options.resolution, options.precision,
-            not options.disable_deskew, options.contrast):
-        file_name = '%s%s.png' % (date_name, letters[count])
+            options.deskew, options.contrast):
+        file_name = '%s%s.png' % (date_name, letters.next())
         full_path = os.path.join(target, file_name)
+        print 'Saving %s' % full_path
         crop.save(full_path)
-        count += 1
-    print 'Found %d photos.' % count
 

@@ -1,3 +1,4 @@
+# Copyright 2011 Michael Saavedra
 
 import os
 import sys
