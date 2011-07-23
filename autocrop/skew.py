@@ -74,7 +74,6 @@ class SkewedImage(object):
                         break
                 distance += 1
             distances.append(distance)
-        print distances
         return distances
     
     def _get_angle(self, distances, step):
