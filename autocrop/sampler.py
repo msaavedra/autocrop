@@ -28,6 +28,10 @@ class PixelSampler(object):
             for result in self.run(self.right, x, y, self.step):
                 yield result
     
+    def update_image(self, image):
+        self.image = image
+        self.data = image.load()
+    
     def run(self, direction, x, y, distance=0, maximum=0):
         if distance == 0:
             distance = self.step
@@ -57,7 +61,7 @@ class PixelSampler(object):
     def down(self, x, y, distance=0):
         if distance == 0:
             distance = self.step
-        max_y = self.height - distance
+        max_y = self.height - distance - 1
         if y == max_y:
             raise ReachedEdge(x, y)
         y += distance
@@ -80,7 +84,7 @@ class PixelSampler(object):
     def right(self, x, y, distance=0):
         if distance == 0:
             distance = self.step
-        max_x = self.width - distance
+        max_x = self.width - distance - 1
         if x == max_x:
             raise ReachedEdge(x, y)
         x += distance

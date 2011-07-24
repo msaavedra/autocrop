@@ -24,9 +24,9 @@ class Background(object):
             self.std_devs = std_devs
         else:
             self.std_devs = {
-                'red': 2.0,
-                'green': 2.0,
-                'blue': 2.0,
+                'red': 1.5,
+                'green': 1.5,
+                'blue': 1.5,
                 }
     
     def load_from_image(self, image, dpi):
