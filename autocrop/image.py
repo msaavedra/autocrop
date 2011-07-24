@@ -28,7 +28,7 @@ class MultiPartImage(object):
                 )
             if self.deskew:
                 skew = SkewedImage(image, self.background, self.contrast)
-                image = skew.correct()
+                image = skew.correct(self.precision)
             yield image
     
     def __len__(self):

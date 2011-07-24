@@ -41,11 +41,12 @@ class SkewedImage(object):
             perpendicular=self.samples.right
             )
     
-    def correct(self):
+    def correct(self, precision):
         angles = []
         for side in (self.top, self.right, self.bottom, self.left):
-            distances = self._get_margin_distances(side)
-            angles.extend(self._get_margin_angles(distances, side.step))
+            distances = self._get_margins(side)
+            step = side.transverse / PRECISION
+            angles.extend(self._get_margin_angles(distances, step))
         angle = get_median(angles)
         
         image = self.image.convert('RGBA').rotate(angle, Image.BICUBIC)
@@ -60,14 +61,14 @@ class SkewedImage(object):
         
         self.samples.update_image(image)
         image = image.crop((
-            int(get_median(self._get_margin_distances(self.left))),
-            int(get_median(self._get_margin_distances(self.top))),
-            self.width-int(get_median(self._get_margin_distances(self.right))),
-            self.height-int(get_median(self._get_margin_distances(self.bottom)))
+            int(get_median(self._get_margins(self.left, precision))),
+            int(get_median(self._get_margins(self.top, precision))),
+            self.width-int(get_median(self._get_margins(self.right, precision))),
+            self.height-int(get_median(self._get_margins(self.bottom, precision)))
             ))
         return image
     
-    def _get_margin_distances(self, side):
+    def _get_margins(self, side, limit=0):
         step = side.transverse / PRECISION
         count = PRECISION - 2
         distances = []
@@ -86,6 +87,12 @@ class SkewedImage(object):
                     if not self.background.matches(r, g, b, self.contrast):
                         break
                 distance += 1
+                if limit > 0 and distance > limit:
+                    # If we've come to this, the margin detection has
+                    # certainly failed. The safest thing to do is report
+                    # no margin at all
+                    distance = 0
+                    break
             distances.append(distance)
         return distances
     
