@@ -1,6 +1,6 @@
 # Copyright 2011 Michael Saavedra
 
-from PIL import Image
+from PIL.Image import BICUBIC
 
 from sampler import PixelSampler
 from pixel_math import get_angle, get_median
@@ -14,124 +14,105 @@ class SkewedImage(object):
         self.image = image
         self.width, self.height = image.size
         self.background = background
-        self.samples = PixelSampler(image, dpi=1, precision=1)
         self.contrast = contrast
-        self.top = Orientation(
-            longitudinal=self.height,
-            transverse=self.width,
-            parallel=self.samples.right,
-            perpendicular=self.samples.down
-            )
-        self.right = Orientation(
-            longitudinal=self.width,
-            transverse=self.height,
-            parallel=self.samples.down,
-            perpendicular=self.samples.left
-            )
-        self.bottom = Orientation(
-            longitudinal=self.height,
-            transverse=self.width,
-            parallel=self.samples.left,
-            perpendicular=self.samples.up
-            )
-        self.left = Orientation(
-            longitudinal=self.width,
-            transverse=self.height,
-            parallel=self.samples.up,
-            perpendicular=self.samples.right
-            )
+        sampler = PixelSampler(image, dpi=1, precision=1)
+        self.left = Left(sampler)
+        self.top = Top(sampler)
+        self.right = Right(sampler)
+        self.bottom = Bottom(sampler)
     
-    def correct(self, precision):
+    def correct(self, margin_limit):
+        margins = []
         angles = []
-        for side in (self.top, self.right, self.bottom, self.left):
-            distances = self._get_margins(side)
-            step = side.transverse / PRECISION
-            angles.extend(self._get_margin_angles(distances, step))
-        angle = get_median(angles)
-        
-        image = self.image.convert('RGBA').rotate(angle, Image.BICUBIC)
-        rgba = (
-            int(self.background.medians['red']),
-            int(self.background.medians['green']),
-            int(self.background.medians['blue']),
-            255 # alpha value - completely opaque
-            )
-        bg = Image.new('RGBA', image.size, rgba)
-        image = Image.composite(image, bg, image).convert(self.image.mode)
-        
-        self.samples.update_image(image)
-        image = image.crop((
-            int(get_median(self._get_margins(self.left, precision))),
-            int(get_median(self._get_margins(self.top, precision))),
-            self.width-int(get_median(self._get_margins(self.right, precision))),
-            self.height-int(get_median(self._get_margins(self.bottom, precision)))
-            ))
-        return image
+        for side in (self.left, self.top, self.right, self.bottom):
+            distance, angle = self._get_margin(side, margin_limit)
+            margins.append(distance)
+            angles.append(angle)
+        # Margins are currently measured relative to their own side.
+        # We need them to be absolute, so right and bottom need modification.
+        margins[2] = self.width - margins[2]
+        margins[3] = self.height - margins[3]
+        return self.image.rotate(get_median(angles), BICUBIC).crop(margins)
     
-    def _get_margins(self, side, limit=0):
-        step = side.transverse / PRECISION
-        count = PRECISION - 2
+    def _get_margin(self, side, margin_limit):
         distances = []
-        for p in self.samples.run(side.parallel, side.x, side.y, step, count):
-            x, y = p[:2]
+        for x, y, r, g, b in side.run_parallel():
             distance = 0
             found_background = False
-            for x, y, r, g, b in self.samples.run(side.perpendicular, x, y, 1):
+            for x, y, r, g, b in side.run_perpendicular(x, y):
                 if not found_background:
                     if self.background.matches(r, g, b, self.contrast):
                         found_background = True
-                    elif distance >= (step / 4):
-                        distance = 0
-                        break
                 else:
                     if not self.background.matches(r, g, b, self.contrast):
                         break
                 distance += 1
-                if limit > 0 and distance > limit:
-                    # If we've come to this, the margin detection has
-                    # certainly failed. The safest thing to do is report
-                    # no margin at all
-                    distance = 0
-                    break
             distances.append(distance)
-        return distances
-    
-    def _get_margin_angles(self, distances, step):
-        return [get_angle(distances[i+1] - distances[i], step)
-                for i in range(len(distances) - 1)]
+        angles = [get_angle(distances[i+1] - distances[i], side.step)
+                    for i in range(len(distances) - 1)]
+        distances = [min(margin_limit, d) for d in distances]
+        return int(get_median(distances)), get_median(angles)
 
-class Orientation(object):
-    """An object that keeps track of frame-of-reference information.
-    """
-    def __init__(self, longitudinal, transverse, parallel, perpendicular):
-        self.longitudinal = longitudinal
-        self.transverse = transverse
-        self.parallel = parallel
-        self.perpendicular = perpendicular
-        if parallel.func_name == 'right':
-            self.x = transverse / PRECISION
-            self.y = 0
-        elif parallel.func_name == 'down':
-            self.x = longitudinal - 1
-            self.y = transverse / PRECISION
-        elif parallel.func_name == 'left':
-            self.x = transverse * (PRECISION - 1) / PRECISION
-            self.y = longitudinal - 1
-        elif parallel.func_name == 'up':
-            self.x = 0
-            self.y = transverse * (PRECISION - 1) / PRECISION
-        else:
-            msg = 'Invalid parallel function name %s.' % parallel.func_name
-            raise StandardError(msg)
+
+class Top(object):
+    
+    precision = 6
+    count = precision - 2
+    
+    def __init__(self, sampler):
+        self.sampler = sampler
+        self.step = sampler.width / self.precision
+        self.parallel = sampler.right
+        self.perpendicular = sampler.down
+        self.x = self.step
+        self.y = 0
+    
+    def run_parallel(self):
+        return self.sampler.run(
+            self.parallel, self.x, self.y, self.step, self.count
+            )
+    
+    def run_perpendicular(self, x, y):
+        return self.sampler.run(self.perpendicular, x, y, 1)
+
+class Right(Top):
+    
+    def __init__(self, sampler):
+        self.sampler = sampler
+        self.step = sampler.height / self.precision
+        self.parallel = sampler.down
+        self.perpendicular = sampler.left
+        self.x = sampler.width - 1
+        self.y = self.step
+
+class Bottom(Top):
+    
+    def __init__(self, sampler):
+        self.sampler = sampler
+        self.step = sampler.width / self.precision
+        self.parallel = sampler.left
+        self.perpendicular = sampler.up
+        self.x = sampler.width - self.step
+        self.y = sampler.height - 1
+
+class Left(Top):
+    
+    def __init__(self, sampler):
+        self.sampler = sampler
+        self.step = sampler.height / self.precision
+        self.parallel = sampler.up
+        self.perpendicular = sampler.right
+        self.x = 0
+        self.y = sampler.height - self.step
 
 
 if __name__ == '__main__':
     from background import Background
     from PIL import Image
     background = Background()
-    image = Image.open('/home/mike/skew_test2.png')
+    image = Image.open('/home/mike/skew_test.png')
     skew = SkewedImage(image, background)
-    image = skew.correct()
+    image = skew.correct(margin_limit=80)
     image.show()
     
 
