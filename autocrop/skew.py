@@ -28,6 +28,8 @@ class SkewedImage(object):
             distance, angle = self._get_margin(side, margin_limit)
             margins.append(distance)
             angles.append(angle)
+        # Margins are currently measured relative to their own side.
+        # We need them to be absolute, so right and bottom need modification.
         margins[2] = self.width - margins[2]
         margins[3] = self.height - margins[3]
         return self.image.rotate(get_median(angles), BICUBIC).crop(margins)
@@ -45,15 +47,10 @@ class SkewedImage(object):
                     if not self.background.matches(r, g, b, self.contrast):
                         break
                 distance += 1
-                if distance > margin_limit:
-                    # If we've come to this, the margin detection has
-                    # certainly failed. The safest thing to do is report
-                    # no margin at all
-                    distance = 0
-                    break
             distances.append(distance)
         angles = [get_angle(distances[i+1] - distances[i], side.step)
                     for i in range(len(distances) - 1)]
+        distances = [min(margin_limit, d) for d in distances]
         return int(get_median(distances)), get_median(angles)
 
 
