@@ -4,7 +4,6 @@ __all__ = (
     'image',
     'pixel_math',
     'sampler',
-    'scanner',
     'skew'
     )
 
