@@ -1,17 +1,57 @@
 #!/usr/bin/env python2
 # Copyright 2011 Michael Saavedra
 
+"""A linux command-line utility to scan the photos placed in a scanner,
+crop them, optionally de-skew them, and save them.
+
+This should be considered a demonstration most of the capabilities of the
+package, not a utility for general wide-spread use.
+
+This depends on my cross_platform package, which is available at:
+https://github.com/msaavedra/cross_platform
+"""
+
 import sys
 import time
 import os
 import argparse
+import subprocess
+from StringIO import StringIO
 
 from PIL import Image
 
 from cross_platform import files
 from autocrop.image import MultiPartImage
 from autocrop.background import Background
-from autocrop import scanner
+
+def scan(dpi, device=None):
+    args = ['scanimage']
+    if device:
+        args.extend(['-d', device])
+    args.extend(['--resolution', str(dpi)])
+    process = subprocess.Popen(args, stdout=subprocess.PIPE)
+    return Image.open(StringIO(process.communicate()[0]))
+
+def detect_scanners():
+    process = subprocess.Popen(['scanimage', '-L'], stdout=subprocess.PIPE)
+    scanners = []
+    for line in process.stdout.readlines():
+        if not line.startswith('device `'):
+            continue
+        line = line.strip()
+        device, name = line[8:].split("' is a ", 1)
+        name = '%s (%s)' % (name, device)
+        scanners.append((name, device))
+    return scanners
+
+def get_default_scanner():
+    if os.environ.has_key('SANE_DEFAULT_DEVICE'):
+        return os.environ['SANE_DEFAULT_DEVICE']
+    scanners = detect()
+    if len(scanners) < 1:
+        sys.stderr.write('No scanners found.\n')
+        sys.exit(1)
+    return scanners[0]
 
 parser = argparse.ArgumentParser(
     description='A utility to crop multiple photos out of a scanned sheet.'
@@ -63,14 +103,14 @@ else:
     background = Background()
 
 if options.list:
-    for name, device in scanner.detect():
+    for name, device in detect_scanners():
         print name
 elif options.blank:
     if options.scanner:
         devices = [options.scanner]
     else:
-        devices = ['', scanner.get_default()]
-    image = scanner.scan(options.resolution, options.scanner)
+        devices = ['', get_default_scanner()]
+    image = scan(options.resolution, options.scanner)
     background.load_from_image(image, options.resolution)
     for device in devices:
         bg_records[device] = (background.medians, background.std_devs)
@@ -78,7 +118,7 @@ elif options.blank:
 else:
     date_name = time.strftime('%Y-%m-%d-%H%M%S', time.localtime(time.time()))
     letters=iter('abcdefjhijklmnopqrstuvwxyz')
-    image = scanner.scan(options.resolution, options.scanner)
+    image = scan(options.resolution, options.scanner)
     target = os.path.abspath(options.target)
     if not os.path.exists(target):
         os.makedirs(target)
