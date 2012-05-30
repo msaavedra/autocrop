@@ -91,8 +91,7 @@ class ImageSection(object):
             return False
     
     def __contains__(self, pixel):
-        x, y = pixel
-        return self.contains(x, y)
+        return self.contains(*pixel)
     
     def overlap(self, other):
         """Determine the degree of overlap between this section and another.
