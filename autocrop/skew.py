@@ -38,16 +38,17 @@ class SkewedImage(object):
         distances = []
         for x, y, r, g, b in side.run_parallel():
             distance = 0
-            found_background = False
-            for x, y, r, g, b in side.run_perpendicular(x, y):
-                if not found_background:
-                    if self.background.matches(r, g, b, self.contrast):
-                        found_background = True
-                else:
-                    if not self.background.matches(r, g, b, self.contrast):
-                        break
+            samples = side.run_perpendicular(x, y)
+            for x, y, r, g, b in samples:
+                distance += 1
+                if self.background.matches(r, g, b, self.contrast):
+                    break
+            for x, y, r, g, b in samples:
+                if not self.background.matches(r, g, b, self.contrast):
+                    break
                 distance += 1
             distances.append(distance)
+        
         angles = [get_angle(distances[i+1] - distances[i], side.step)
                     for i in range(len(distances) - 1)]
         distances = [min(margin_limit, d) for d in distances]
