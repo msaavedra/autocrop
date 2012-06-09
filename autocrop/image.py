@@ -144,11 +144,11 @@ class ImageSection(object):
 if __name__ == '__main__':
     from PIL import Image
     from background import Background
-    #blank = Image.open('/home/mike/Pictures/Scans/blank.png')
-    background = Background()#.load_from_image(blank, dpi=300)
+    blank = Image.open('/home/mike/Pictures/Scans/blank.png')
+    background = Background().load_from_image(blank, dpi=300)
     #print background.std_devs, background.medians
-    image = Image.open('/home/mike/Pictures/Scans/Family Photos/Sheet 21.jpg')
-    scan = MultiPartImage(image, background, dpi=300, deskew=True, precision=32, contrast=20)
+    image = Image.open('/home/mike/Pictures/Scans/Family Photos/Sheet 11.jpg')
+    scan = MultiPartImage(image, background, dpi=300, deskew=True, precision=32, contrast=10)
     for photo in scan:
         photo.show()
 

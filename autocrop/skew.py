@@ -1,12 +1,10 @@
 # Copyright 2011 Michael Saavedra
 
+import numpy
 from PIL.Image import BICUBIC
 
 from sampler import PixelSampler
-from pixel_math import get_angle, get_median
-
-# This value works well in all situations, so no need to make it configurable.
-PRECISION = 8
+from math import atan2, degrees
 
 class SkewedImage(object):
     
@@ -32,7 +30,8 @@ class SkewedImage(object):
         # We need them to be absolute, so right and bottom need modification.
         margins[2] = self.width - margins[2]
         margins[3] = self.height - margins[3]
-        return self.image.rotate(get_median(angles), BICUBIC).crop(margins)
+        rotated_img = self.image.rotate(degrees(numpy.median(angles)), BICUBIC)
+        return rotated_img.crop(margins)
     
     def _get_margin(self, side, margin_limit):
         distances = []
@@ -49,10 +48,10 @@ class SkewedImage(object):
                 distance += 1
             distances.append(distance)
         
-        angles = [get_angle(distances[i+1] - distances[i], side.step)
+        angles = [atan2(distances[i+1] - distances[i], side.step)
                     for i in range(len(distances) - 1)]
         distances = [min(margin_limit, d) for d in distances]
-        return int(get_median(distances)), get_median(angles)
+        return int(numpy.median(distances)), numpy.median(angles)
 
 
 class Top(object):
