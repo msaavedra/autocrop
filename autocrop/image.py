@@ -58,10 +58,10 @@ class MultiPartImage(object):
             if True in (s.merge_if_overlapping(new_section) for s in sections):
                 continue
             
-            if new_section > self.precision ** 2:
-                sections.append(new_section)
+            sections.append(new_section)
         
-        return sections
+        # Filter out sections smaller than 1 sqaure inch before returning.
+        return [s for s in sections if s > self.dpi ** 2]
 
 
 class ImageSection(object):
@@ -73,7 +73,6 @@ class ImageSection(object):
         The dimensions will be the smallest possible that can contain the
         provided sequence of pixels (each of which is an x, y tuple).
         """
-        self.area = len(pixels)
         seq_x, seq_y = zip(*pixels)
         self.left = min(seq_x)
         self.right = max(seq_x)
@@ -81,6 +80,7 @@ class ImageSection(object):
         self.bottom = max(seq_y)
         self.height = self.bottom - self.top
         self.width = self.right - self.left
+        self.area = self.height * self.width
     
     def contains(self, x, y):
         """Returns True only if the given coordinate is inside this photo.
@@ -147,8 +147,8 @@ if __name__ == '__main__':
     blank = Image.open('/home/mike/Pictures/Scans/blank.png')
     background = Background().load_from_image(blank, dpi=300)
     #print background.std_devs, background.medians
-    image = Image.open('/home/mike/Pictures/Scans/Family Photos/Sheet 1.jpg')
-    scan = MultiPartImage(image, background, dpi=300, deskew=True, precision=32, contrast=10)
+    image = Image.open('/home/mike/Pictures/Scans/1972-Saavedras/20101216153147.png')
+    scan = MultiPartImage(image, background, dpi=300, deskew=True, precision=24, contrast=10)
     for photo in scan:
         photo.show()
 
