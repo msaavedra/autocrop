@@ -2,7 +2,6 @@
 __all__ = (
     'background',
     'image',
-    'pixel_math',
     'sampler',
     'skew'
     )
