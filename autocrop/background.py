@@ -50,7 +50,7 @@ class Background(object):
     def matches(self, red, green, blue, spread):
         """Return True if the given color is probably part of the background.
         """
-        values = vars()
+        values = {'red': red, 'green': green, 'blue': blue}
         for color in ('red', 'green', 'blue'):
             delta = abs(self.medians[color] - values[color])
             if delta > self.std_devs[color] * spread:
