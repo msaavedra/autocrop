@@ -14,43 +14,44 @@ class SkewedImage(object):
         self.background = background
         self.contrast = contrast
         sampler = PixelSampler(image, dpi=1, precision=1)
-        self.left = Left(sampler)
-        self.top = Top(sampler)
-        self.right = Right(sampler)
-        self.bottom = Bottom(sampler)
+        self.sides = (
+            Left(sampler),
+            Top(sampler),
+            Right(sampler),
+            Bottom(sampler),
+            )
     
-    def correct(self, margin_limit):
-        margins = []
-        angles = []
-        for side in (self.left, self.top, self.right, self.bottom):
-            distance, angle = self._get_margin(side, margin_limit)
-            margins.append(distance)
-            angles.append(angle)
-        # Margins are currently measured relative to their own side.
-        # We need them to be absolute, so right and bottom need modification.
-        margins[2] = self.width - margins[2]
-        margins[3] = self.height - margins[3]
+    def correct(self):
+        margins, angles = zip(*[self._get_margin(side) for side in self.sides])
         rotated_img = self.image.rotate(degrees(numpy.median(angles)), BICUBIC)
         return rotated_img.crop(margins)
     
-    def _get_margin(self, side, margin_limit):
+    def _get_margin(self, side):
+        """Find the distance and angle of the margin on a particular side.
+        """
         distances = []
+        angles = []
         for x, y, r, g, b in side.run_parallel():
-            distance = 0
             samples = side.run_perpendicular(x, y)
+            
+            # First try to find any shadows along the image border.
             for x, y, r, g, b in samples:
-                distance += 1
                 if self.background.matches(r, g, b, self.contrast):
                     break
+                if side.get_distance(x, y) > side.step:
+                    # We've gone too far. Reset.
+                    samples = side.run_perpendicular(x, y)
+                    break
+            
+            # Next try find any remaining background.
             for x, y, r, g, b in samples:
                 if not self.background.matches(r, g, b, self.contrast):
                     break
-                distance += 1
-            distances.append(distance)
+            
+            if distances:
+                angles.append(side.get_angle(distances[-1], x, y))
+            distances.append(side.get_distance(x, y))
         
-        angles = [atan2(distances[i+1] - distances[i], side.step)
-                    for i in range(len(distances) - 1)]
-        distances = [min(margin_limit, d) for d in distances]
         return int(numpy.median(distances)), numpy.median(angles)
 
 
@@ -74,6 +75,12 @@ class Top(object):
     
     def run_perpendicular(self, x, y):
         return self.sampler.run(self.perpendicular, x, y, 1)
+    
+    def get_distance(self, x, y):
+        return y
+    
+    def get_angle(self, prev_distance, x, y):
+        return atan2(y - prev_distance, self.step)
 
 class Right(Top):
     
@@ -84,6 +91,12 @@ class Right(Top):
         self.perpendicular = sampler.left
         self.x = sampler.width - 1
         self.y = self.step
+    
+    def get_distance(self, x, y):
+        return x
+    
+    def get_angle(self, prev_distance, x, y):
+        return atan2(prev_distance - x, self.step)
 
 class Bottom(Top):
     
@@ -94,6 +107,13 @@ class Bottom(Top):
         self.perpendicular = sampler.up
         self.x = sampler.width - self.step
         self.y = sampler.height - 1
+    
+    def get_distance(self, x, y):
+        return y
+    
+    def get_angle(self, prev_distance, x, y):
+        return atan2(prev_distance - y, self.step)
+
 
 class Left(Top):
     
@@ -104,6 +124,13 @@ class Left(Top):
         self.perpendicular = sampler.right
         self.x = 0
         self.y = sampler.height - self.step
+    
+    def get_distance(self, x, y):
+        return x
+        
+    def get_angle(self, prev_distance, x, y):
+        return atan2(x - prev_distance, self.step)
+
 
 
 if __name__ == '__main__':
@@ -112,7 +139,7 @@ if __name__ == '__main__':
     background = Background()
     image = Image.open('/home/mike/skew_test.png')
     skew = SkewedImage(image, background)
-    image = skew.correct(margin_limit=80)
+    image = skew.correct(limit=80)
     image.show()
     
 

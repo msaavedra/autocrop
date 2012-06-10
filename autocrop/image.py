@@ -28,7 +28,7 @@ class MultiPartImage(object):
                 )
             if self.deskew:
                 skew = SkewedImage(image, self.background, self.contrast)
-                image = skew.correct(self.samples.step)
+                image = skew.correct()
             yield image
     
     def __len__(self):
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     blank = Image.open('/home/mike/Pictures/Scans/blank.png')
     background = Background().load_from_image(blank, dpi=300)
     #print background.std_devs, background.medians
-    image = Image.open('/home/mike/Pictures/Scans/Family Photos/Sheet 11.jpg')
+    image = Image.open('/home/mike/Pictures/Scans/Family Photos/Sheet 1.jpg')
     scan = MultiPartImage(image, background, dpi=300, deskew=True, precision=32, contrast=10)
     for photo in scan:
         photo.show()
