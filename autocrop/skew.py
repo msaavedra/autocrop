@@ -1,10 +1,11 @@
 # Copyright 2011 Michael Saavedra
 
+from math import atan2, degrees
+
 import numpy
 from PIL.Image import BICUBIC
 
 from sampler import PixelSampler
-from math import atan2, degrees
 
 class SkewedImage(object):
     
