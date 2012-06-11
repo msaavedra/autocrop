@@ -3,7 +3,6 @@
 import sys
 
 import numpy
-from cross_platform import files
 
 from sampler import PixelSampler
 
