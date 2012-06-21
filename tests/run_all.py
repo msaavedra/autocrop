@@ -8,13 +8,14 @@ from types import ModuleType
 import autocrop
 
 suite = unittest.TestSuite()
-'''
+
 # Build and add tests from docstrings with doctest.
-suite.addTest(DocTestSuite(autocrop))
-for obj in vars(xmlcomposer).values():
-    if isinstance(obj, ModuleType):
-        suite.addTest(DocTestSuite(obj))
-'''
+# Re-enable this when doctests are available.
+#suite.addTest(DocTestSuite(autocrop))
+#for obj in vars(autoscrop).values():
+#    if isinstance(obj, ModuleType):
+#        suite.addTest(DocTestSuite(obj))
+
 # Add the test subpackages.
 files = os.listdir(os.path.split(os.path.abspath(__file__))[0])
 tests = [n[:-3] for n in files if n.startswith('test_') and n.endswith('.py')]
