@@ -60,7 +60,7 @@ class MultiPartImage(object):
             
             sections.append(new_section)
         
-        # Filter out sections smaller than 1 sqaure inch before returning.
+        # Filter out sections smaller than 1 square inch before returning.
         return [s for s in sections if s > self.dpi ** 2]
 
 
@@ -116,20 +116,22 @@ class ImageSection(object):
             smaller = min(self.height * self.width, other.height * other.width)
             return float(overlap_area) / smaller
     
-    def merge(self, other, overlap):
+    def merge(self, other):
         self.top = min(self.top, other.top)
         self.bottom = max(self.bottom, other.bottom)
         self.left = min(self.left, other.left)
         self.right = max(self.right, other.right)
         self.height = self.bottom - self.top
         self.width = self.right - self.left
-        unoverlapped = int(min(self.area, other.area) * (1 - overlap))
-        self.area = max(self.area, other.area) + unoverlapped
+        self.area = self.height * self.width
     
     def merge_if_overlapping(self, other, margin=.15):
-        overlap = self.overlap(other)
-        if overlap >= .15:
-            self.merge(other, overlap)
+        """Merge the section with another if they are significantly overlapping.
+        
+        This returns True if the sections are merged, and False otherwise.
+        """
+        if self.overlap(other) >= margin:
+            self.merge(other)
             return True
         else:
             return False
