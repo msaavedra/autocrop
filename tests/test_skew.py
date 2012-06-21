@@ -25,9 +25,9 @@ class TestSkewedImage(unittest.TestCase):
         correct_width = 604
         correct_height = 604
         
-        self.assertAlmostEqual(angle, correct_angle, delta=0.15)
-        self.assertAlmostEqual(correct_width, width, delta=3)
-        self.assertAlmostEqual(correct_height, height, delta=3)
+        self.assertAlmostEqual(angle, correct_angle, delta=0.1)
+        self.assertAlmostEqual(correct_width, width, delta=2)
+        self.assertAlmostEqual(correct_height, height, delta=2)
         
 
 
