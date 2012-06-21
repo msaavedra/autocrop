@@ -132,15 +132,3 @@ class Left(Top):
     def get_angle(self, prev_distance, x, y):
         return atan2(x - prev_distance, self.step)
 
-
-
-if __name__ == '__main__':
-    from background import Background
-    from PIL import Image
-    background = Background()
-    image = Image.open('/home/mike/skew_test.png')
-    skew = SkewedImage(image, background)
-    image = skew.correct(limit=80)
-    image.show()
-    
-

@@ -142,16 +142,4 @@ class ImageSection(object):
         The purpose of this is to filter out things like specks of dust.
         """
         return self.area > minimum_area
-
-if __name__ == '__main__':
-    from PIL import Image
-    from background import Background
-    blank = Image.open('/home/mike/Pictures/Scans/blank.png')
-    background = Background().load_from_image(blank, dpi=300)
-    #print background.std_devs, background.medians
-    image = Image.open('/home/mike/Pictures/Scans/1972-Saavedras/20101216153147.png')
-    scan = MultiPartImage(image, background, dpi=300, deskew=True, precision=24, contrast=10)
-    for photo in scan:
-        photo.show()
-
     
