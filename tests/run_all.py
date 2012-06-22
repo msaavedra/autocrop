@@ -12,7 +12,7 @@ suite = unittest.TestSuite()
 # Build and add tests from docstrings with doctest.
 # Re-enable this when doctests are available.
 #suite.addTest(DocTestSuite(autocrop))
-#for obj in vars(autoscrop).values():
+#for obj in vars(autocrop).values():
 #    if isinstance(obj, ModuleType):
 #        suite.addTest(DocTestSuite(obj))
 
