@@ -28,7 +28,7 @@ class MultiPartImage(object):
                 )
             if self.deskew:
                 skew = SkewedImage(image, self.background, self.contrast)
-                image = skew.correct(self.samples.step)
+                image = skew.correct()
             yield image
     
     def __len__(self):
@@ -58,10 +58,10 @@ class MultiPartImage(object):
             if True in (s.merge_if_overlapping(new_section) for s in sections):
                 continue
             
-            if new_section > self.precision ** 2:
-                sections.append(new_section)
+            sections.append(new_section)
         
-        return sections
+        # Filter out sections smaller than 1 square inch before returning.
+        return [s for s in sections if s > self.dpi ** 2]
 
 
 class ImageSection(object):
@@ -73,7 +73,6 @@ class ImageSection(object):
         The dimensions will be the smallest possible that can contain the
         provided sequence of pixels (each of which is an x, y tuple).
         """
-        self.area = len(pixels)
         seq_x, seq_y = zip(*pixels)
         self.left = min(seq_x)
         self.right = max(seq_x)
@@ -81,6 +80,7 @@ class ImageSection(object):
         self.bottom = max(seq_y)
         self.height = self.bottom - self.top
         self.width = self.right - self.left
+        self.area = self.height * self.width
     
     def contains(self, x, y):
         """Returns True only if the given coordinate is inside this photo.
@@ -91,8 +91,7 @@ class ImageSection(object):
             return False
     
     def __contains__(self, pixel):
-        x, y = pixel
-        return self.contains(x, y)
+        return self.contains(*pixel)
     
     def overlap(self, other):
         """Determine the degree of overlap between this section and another.
@@ -117,20 +116,22 @@ class ImageSection(object):
             smaller = min(self.height * self.width, other.height * other.width)
             return float(overlap_area) / smaller
     
-    def merge(self, other, overlap):
+    def merge(self, other):
         self.top = min(self.top, other.top)
         self.bottom = max(self.bottom, other.bottom)
         self.left = min(self.left, other.left)
         self.right = max(self.right, other.right)
         self.height = self.bottom - self.top
         self.width = self.right - self.left
-        unoverlapped = int(min(self.area, other.area) * (1 - overlap))
-        self.area = max(self.area, other.area) + unoverlapped
+        self.area = self.height * self.width
     
     def merge_if_overlapping(self, other, margin=.15):
-        overlap = self.overlap(other)
-        if overlap >= .15:
-            self.merge(other, overlap)
+        """Merge the section with another if they are significantly overlapping.
+        
+        This returns True if the sections are merged, and False otherwise.
+        """
+        if self.overlap(other) >= margin:
+            self.merge(other)
             return True
         else:
             return False
@@ -141,16 +142,4 @@ class ImageSection(object):
         The purpose of this is to filter out things like specks of dust.
         """
         return self.area > minimum_area
-
-if __name__ == '__main__':
-    from PIL import Image
-    from background import Background
-    #blank = Image.open('/home/mike/Pictures/Scans/blank.png')
-    background = Background()#.load_from_image(blank, dpi=300)
-    #print background.std_devs, background.medians
-    image = Image.open('/home/mike/Pictures/Scans/Family Photos/Sheet 21.jpg')
-    scan = MultiPartImage(image, background, dpi=300, deskew=True, precision=32, contrast=20)
-    for photo in scan:
-        photo.show()
-
     

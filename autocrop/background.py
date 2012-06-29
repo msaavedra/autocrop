@@ -2,10 +2,10 @@
 
 import sys
 
-from cross_platform import files
+import numpy
 
 from sampler import PixelSampler
-from pixel_math import get_median, get_standard_deviation
+
 
 class Background(object):
     
@@ -32,29 +32,24 @@ class Background(object):
     def load_from_image(self, image, dpi):
         """Determine background stats by examining a blank scan.
         """
-        seq_red = []
-        seq_green = []
-        seq_blue = []
-        for (x, y, red, green, blue) in PixelSampler(image, dpi, precision=4):
-            seq_red.append(red)
-            seq_green.append(green)
-            seq_blue.append(blue)
+        sampler = PixelSampler(image, dpi, precision=4)
+        reds, greens, blues = zip(*[sample[2:] for sample in sampler])
         self.medians = {
-            'red': get_median(seq_red),
-            'green': get_median(seq_green),
-            'blue': get_median(seq_blue),
+            'red': numpy.median(reds),
+            'green': numpy.median(greens),
+            'blue': numpy.median(blues),
             }
         self.std_devs = {
-            'red': get_standard_deviation(seq_red),
-            'green': get_standard_deviation(seq_green),
-            'blue': get_standard_deviation(seq_blue),
+            'red': numpy.std(reds),
+            'green': numpy.std(greens),
+            'blue': numpy.std(blues),
             }
         return self
     
     def matches(self, red, green, blue, spread):
         """Return True if the given color is probably part of the background.
         """
-        values = vars()
+        values = {'red': red, 'green': green, 'blue': blue}
         for color in ('red', 'green', 'blue'):
             delta = abs(self.medians[color] - values[color])
             if delta > self.std_devs[color] * spread:
