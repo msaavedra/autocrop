@@ -77,6 +77,10 @@ parser.add_argument(
     help='The scanner to use. If not specified, the system default is used.'
     )
 parser.add_argument(
+    '-f', '--filename', nargs='?', default='',
+    help='Do not scan. Instead, load the image from the given file.'
+    )
+parser.add_argument(
     '-c', '--contrast', nargs='?', type=int, choices=range(1,11), default=5,
     help='The amount of contrast (1-10) between background and foreground. (default: 5).'
     )
@@ -118,7 +122,10 @@ elif options.blank:
 else:
     date_name = time.strftime('%Y-%m-%d-%H%M%S', time.localtime(time.time()))
     letters=iter('abcdefghijklmnopqrstuvwxyz')
-    image = scan(options.resolution, options.scanner)
+    if options.filename:
+        image = Image.open(options.filename)
+    else:
+        image = scan(options.resolution, options.scanner)
     target = os.path.abspath(options.target)
     if not os.path.exists(target):
         os.makedirs(target)
