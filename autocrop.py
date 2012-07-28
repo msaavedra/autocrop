@@ -117,7 +117,7 @@ elif options.blank:
     files.save_object(bg_records, BG_FILE)
 else:
     date_name = time.strftime('%Y-%m-%d-%H%M%S', time.localtime(time.time()))
-    letters=iter('abcdefjhijklmnopqrstuvwxyz')
+    letters=iter('abcdefghijklmnopqrstuvwxyz')
     image = scan(options.resolution, options.scanner)
     target = os.path.abspath(options.target)
     if not os.path.exists(target):
@@ -125,7 +125,7 @@ else:
     for crop in MultiPartImage(image, background,
             options.resolution, options.precision,
             options.deskew, options.contrast):
-        file_name = '%s%s.png' % (date_name, letters.next())
+        file_name = '%s-%s.png' % (date_name, letters.next())
         full_path = os.path.join(target, file_name)
         print 'Saving %s' % full_path
         crop.save(full_path)
