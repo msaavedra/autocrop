@@ -47,7 +47,7 @@ def detect_scanners():
 def get_default_scanner():
     if os.environ.has_key('SANE_DEFAULT_DEVICE'):
         return os.environ['SANE_DEFAULT_DEVICE']
-    scanners = detect()
+    scanners = detect_scanners()
     if len(scanners) < 1:
         sys.stderr.write('No scanners found.\n')
         sys.exit(1)
