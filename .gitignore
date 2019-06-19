@@ -1,0 +1,11 @@
+*.pyc
+*.pyo
+.DS_Store
+*.DS_Store
+ignore
+.ipynb_checkpoints
+*.ipynb
+.pytest_cache
+main/static/.webassets-cache
+main/static/build
+.idea/*
