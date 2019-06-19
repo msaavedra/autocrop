@@ -47,7 +47,7 @@ def detect_scanners():
 def get_default_scanner():
     if os.environ.has_key('SANE_DEFAULT_DEVICE'):
         return os.environ['SANE_DEFAULT_DEVICE']
-    scanners = detect()
+    scanners = detect_scanners()
     if len(scanners) < 1:
         sys.stderr.write('No scanners found.\n')
         sys.exit(1)
@@ -75,6 +75,10 @@ parser.add_argument(
 parser.add_argument(
     '-s', '--scanner', nargs='?', default='',
     help='The scanner to use. If not specified, the system default is used.'
+    )
+parser.add_argument(
+    '-f', '--filename', nargs='?', default='',
+    help='Do not scan. Instead, load the image from the given file.'
     )
 parser.add_argument(
     '-c', '--contrast', nargs='?', type=int, choices=range(1,11), default=5,
@@ -117,15 +121,18 @@ elif options.blank:
     files.save_object(bg_records, BG_FILE)
 else:
     date_name = time.strftime('%Y-%m-%d-%H%M%S', time.localtime(time.time()))
-    letters=iter('abcdefjhijklmnopqrstuvwxyz')
-    image = scan(options.resolution, options.scanner)
+    letters=iter('abcdefghijklmnopqrstuvwxyz')
+    if options.filename:
+        image = Image.open(options.filename)
+    else:
+        image = scan(options.resolution, options.scanner)
     target = os.path.abspath(options.target)
     if not os.path.exists(target):
         os.makedirs(target)
     for crop in MultiPartImage(image, background,
             options.resolution, options.precision,
             options.deskew, options.contrast):
-        file_name = '%s%s.png' % (date_name, letters.next())
+        file_name = '%s-%s.png' % (date_name, letters.next())
         full_path = os.path.join(target, file_name)
         print 'Saving %s' % full_path
         crop.save(full_path)

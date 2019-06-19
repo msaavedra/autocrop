@@ -32,8 +32,8 @@ class SkewedImage(object):
         """
         distances = []
         angles = []
-        for x, y, r, g, b in side.run_parallel():
-            samples = side.run_perpendicular(x, y)
+        for start_x, start_y, r, g, b in side.run_parallel():
+            samples = side.run_perpendicular(start_x, start_y)
             
             # First try to find any shadows along the image border.
             for x, y, r, g, b in samples:
@@ -41,7 +41,7 @@ class SkewedImage(object):
                     break
                 if side.get_distance(x, y) > side.step:
                     # We've gone too far. Reset.
-                    samples = side.run_perpendicular(x, y)
+                    samples = side.run_perpendicular(start_x, start_y)
                     break
             
             # Next try find any remaining background.
