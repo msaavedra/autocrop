@@ -3,7 +3,7 @@ optionally rotate crooked photos.  The typical use would be to scan several
 photos in a flatbed scanner, and use autocrop to find the photos, deskew them,
 and save them independently.
 
-The package requires the Pillow.
+Pipenv can be used to install dependencies (currently only pillow and numpy).
 
 Basic usage of the module is as follows:
 
