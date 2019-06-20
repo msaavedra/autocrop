@@ -5,7 +5,8 @@ import unittest
 from PIL import Image
 
 from autocrop import MultiPartImage, Background
-from const import IMAGE_PATH
+from tests.const import IMAGE_PATH
+
 
 class TestImage(unittest.TestCase):
     
@@ -32,5 +33,3 @@ class TestImage(unittest.TestCase):
             width, height = image.size
             self.assertAlmostEqual(correct_width, width, delta=margin)
             self.assertAlmostEqual(correct_height, height, delta=margin)
-
-

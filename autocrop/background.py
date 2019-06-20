@@ -1,10 +1,8 @@
 # Copyright 2011 Michael Saavedra
 
-import sys
+import numpy as np
 
-import numpy
-
-from sampler import PixelSampler
+from .sampler import PixelSampler
 
 
 class Background(object):
@@ -33,27 +31,26 @@ class Background(object):
         """Determine background stats by examining a blank scan.
         """
         sampler = PixelSampler(image, dpi, precision=4)
-        reds, greens, blues = zip(*[sample[2:] for sample in sampler])
+        reds, greens, blues = list(zip(*[sample[2:] for sample in sampler]))
         self.medians = {
-            'red': numpy.median(reds),
-            'green': numpy.median(greens),
-            'blue': numpy.median(blues),
+            'red': np.median(reds),
+            'green': np.median(greens),
+            'blue': np.median(blues),
             }
         self.std_devs = {
-            'red': numpy.std(reds),
-            'green': numpy.std(greens),
-            'blue': numpy.std(blues),
+            'red': np.std(reds),
+            'green': np.std(greens),
+            'blue': np.std(blues),
             }
         return self
     
-    def matches(self, red, green, blue, spread):
+    def matches(self, color, spread):
         """Return True if the given color is probably part of the background.
         """
+        red, green, blue = color
         values = {'red': red, 'green': green, 'blue': blue}
         for color in ('red', 'green', 'blue'):
             delta = abs(self.medians[color] - values[color])
             if delta > self.std_devs[color] * spread:
                 return False
         return True
-
-

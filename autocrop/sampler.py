@@ -1,6 +1,9 @@
 # Copyright 2011 Michael Saavedra
 
-class ReachedEdge(StopIteration): pass
+
+class ReachedEdge(StopIteration):
+    pass
+
 
 class PixelSampler(object):
     """An iterator to collect regularly spaced pixel samples from an image.
@@ -24,7 +27,7 @@ class PixelSampler(object):
         self.step = int(self.dpi / self.precision)
     
     def __iter__(self):
-        for x, y, r, g, b in self.run(self.down, self.step, self.step):
+        for x, y, _, _, _ in self.run(self.down, self.step, self.step):
             for result in self.run(self.right, x, y, self.step):
                 yield result
     
@@ -37,9 +40,14 @@ class PixelSampler(object):
             distance = self.step
         count = 0
         red, green, blue = self.data[x, y][:3]
-        yield x, y, red, green, blue
+        
+        yield (x, y, red, green, blue)
         while True:
-            result = direction(x, y, distance)
+            try:
+                result = direction(x, y, distance)
+            except ReachedEdge:
+                return
+            
             yield result
             if maximum:
                 count += 1
@@ -99,5 +107,3 @@ class PixelSampler(object):
                 yield f(x, y, distance)
             except ReachedEdge:
                 continue
-
-

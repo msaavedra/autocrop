@@ -3,12 +3,13 @@ import os
 import unittest
 from math import degrees
 
-import numpy
+import numpy as np
 from PIL import Image
 
 from autocrop import Background
 from autocrop.skew import SkewedImage
-from const import IMAGE_PATH
+from tests.const import IMAGE_PATH
+
 
 class TestSkewedImage(unittest.TestCase):
     
@@ -16,7 +17,7 @@ class TestSkewedImage(unittest.TestCase):
         test_image_path = os.path.join(IMAGE_PATH, '6-degrees-skewed.jpg')
         skewed = SkewedImage(Image.open(test_image_path), Background())
         angles = [skewed._get_margin(side)[1] for side in skewed.sides]
-        angle = degrees(numpy.median(angles))
+        angle = degrees(np.median(angles))
         deskewed = skewed.correct()
         width, height = deskewed.size
         

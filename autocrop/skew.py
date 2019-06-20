@@ -5,7 +5,7 @@ from math import atan2, degrees
 import numpy
 from PIL.Image import BICUBIC
 
-from sampler import PixelSampler
+from .sampler import PixelSampler
 
 class SkewedImage(object):
     
@@ -23,7 +23,7 @@ class SkewedImage(object):
             )
     
     def correct(self):
-        margins, angles = zip(*[self._get_margin(side) for side in self.sides])
+        margins, angles = list(zip(*[self._get_margin(side) for side in self.sides]))
         rotated_img = self.image.rotate(degrees(numpy.median(angles)), BICUBIC)
         return rotated_img.crop(margins)
     
@@ -37,7 +37,7 @@ class SkewedImage(object):
             
             # First try to find any shadows along the image border.
             for x, y, r, g, b in samples:
-                if self.background.matches(r, g, b, self.contrast):
+                if self.background.matches((r, g, b), self.contrast):
                     break
                 if side.get_distance(x, y) > side.step:
                     # We've gone too far. Reset.
@@ -46,7 +46,7 @@ class SkewedImage(object):
             
             # Next try find any remaining background.
             for x, y, r, g, b in samples:
-                if not self.background.matches(r, g, b, self.contrast):
+                if not self.background.matches((r, g, b), self.contrast):
                     break
             
             if distances:

@@ -3,9 +3,7 @@ optionally rotate crooked photos.  The typical use would be to scan several
 photos in a flatbed scanner, and use autocrop to find the photos, deskew them,
 and save them independently.
 
-The package requires the Python Imaging Library.  It is shipped with most Linux
-distributions, but can be downloaded if needed for Linux and Windows from
-http://www.pythonware.com/products/pil/ .
+The package requires the Pillow.
 
 Basic usage of the module is as follows:
 

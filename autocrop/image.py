@@ -1,7 +1,7 @@
 # Copyright 2011 Michael Saavedra
 
-from sampler import PixelSampler
-from skew import SkewedImage
+from .sampler import PixelSampler
+from .skew import SkewedImage
 
 
 class MultiPartImage(object):
@@ -36,23 +36,28 @@ class MultiPartImage(object):
     
     def _find_sections(self):
         sections = []
-        for (x, y, red, green, blue) in self.samples:
+        for pixel in self.samples:
             # Skip if the sample is background or is already in a section.
-            if self.background.matches(red, green, blue, self.contrast):
+            color_data = pixel[2:]
+            location_data = pixel[:2]
+            if self.background.matches(color_data, self.contrast):
                 continue
-            if True in (section.contains(x,y) for section in sections):
+            if True in (location_data in section for section in sections):
                 continue
             
             # Find contiguous samples. This works like a 4-way flood fill, but
             # instead of changing the color we just collect the coordinates.
-            seeds = [(x, y)]
+            seeds = [location_data]
             pixels = set(seeds)
-            for coords in iter(seeds):
-                for x, y, r, g, b in self.samples.around(*coords):
-                    if (x, y) not in pixels:
-                        pixels.add((x, y))
-                        if not self.background.matches(r, g, b, self.contrast):
-                            seeds.append((x, y))
+            for seed in iter(seeds):
+                for x, y, r, g, b in self.samples.around(*seed):
+                    location = (x, y)
+                    color = (r, g, b)
+                    if location not in pixels:
+                        pixels.add(location)
+                        if not self.background.matches(color, self.contrast):
+                            seeds.append(location)
+            
             new_section = ImageSection(pixels)
             
             if True in (s.merge_if_overlapping(new_section) for s in sections):
@@ -73,7 +78,7 @@ class ImageSection(object):
         The dimensions will be the smallest possible that can contain the
         provided sequence of pixels (each of which is an x, y tuple).
         """
-        seq_x, seq_y = zip(*pixels)
+        seq_x, seq_y = list(zip(*pixels))
         self.left = min(seq_x)
         self.right = max(seq_x)
         self.top = min(seq_y)
