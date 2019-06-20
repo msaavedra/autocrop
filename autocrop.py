@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # Copyright 2011 Michael Saavedra
 
 """A linux command-line utility to scan the photos placed in a scanner,
@@ -10,11 +10,12 @@ package, not a utility for general wide-spread use.
 
 import argparse
 import errno
-from io import StringIO
+from io import BytesIO
 import json
 import os
 import subprocess
 import sys
+import tempfile
 import time
 
 from PIL import Image
@@ -41,16 +42,25 @@ os.makedirs(AUTOCROP_DIR, mode=0o700, exist_ok=True)
 def scan(dpi, device=None):
     args = ['scanimage']
     if device:
+        if isinstance(device, (list, tuple)):
+            device = device[1]
         args.extend(['-d', device])
-    args.extend(['--resolution', str(dpi)])
+    args.extend(['--resolution', str(dpi), '--mode', 'Color'])
+    print(args)
     process = subprocess.Popen(args, stdout=subprocess.PIPE)
-    return Image.open(StringIO(process.communicate()[0]))
-
+    output = process.communicate()[0]
+    if process.returncode > 0:
+        sys.exit(1)
+        
+    image = Image.open(BytesIO(output))
+    print(f'Scanned image attributes: {image.mode} {image.size}')
+    return image
 
 def detect_scanners():
     process = subprocess.Popen(['scanimage', '-L'], stdout=subprocess.PIPE)
     scanners = []
     for line in process.stdout.readlines():
+        line = line.decode('utf-8')
         if not line.startswith('device `'):
             continue
         line = line.strip()
@@ -68,6 +78,15 @@ def get_default_scanner():
         sys.stderr.write('No scanners found.\n')
         sys.exit(1)
     return scanners[0]
+
+
+def get_scanner_base_name(device):
+    if isinstance(device, (list, tuple)):
+        device = device[0]
+    
+    name = device.partition('(')[0].strip()
+    print(name)
+    return name
 
 
 def parse_commandline_options():
@@ -104,7 +123,7 @@ def parse_commandline_options():
         default=24,
         help=(
             'The precision to use while cropping. Higher is better '
-            'but slower (default: 20).'
+            'but slower (default: 24).'
             )
         )
     parser.add_argument(
@@ -156,7 +175,7 @@ def parse_commandline_options():
 def main(options):
     bg_file = os.path.join(AUTOCROP_DIR, 'backgrounds.json')
     try:
-        with open(bg_file, 'rb') as f:
+        with open(bg_file, 'r') as f:
             bg_records = json.load(f)
     except OSError as e:
         if e.errno == errno.ENOENT:
@@ -164,8 +183,10 @@ def main(options):
         else:
             raise
     
-    if options.scanner in bg_records:
-        background = Background(*bg_records[options.scanner])
+    device_name = get_scanner_base_name(options.scanner)
+    if device_name in bg_records:
+        print('loading sample background data')
+        background = Background(*bg_records[device_name])
     else:
         background = Background()
     
@@ -183,9 +204,25 @@ def main(options):
         image = scan(options.resolution, options.scanner)
         background.load_from_image(image, options.resolution)
         for device in devices:
-            bg_records[device] = (background.medians, background.std_devs)
-        with open(bg_file, 'rb') as f:
-            json.dump(bg_records, f)
+            name = get_scanner_base_name(device)
+            bg_records[name] = (background.medians, background.std_devs)
+        print(bg_records)
+        temp_bg_file = tempfile.NamedTemporaryFile(
+            mode='w',
+            dir=AUTOCROP_DIR,
+            delete=False
+            )
+        temp_bg_file_name = temp_bg_file.name
+        try:
+            json.dump(bg_records, temp_bg_file)
+        except:
+            os.remove(temp_bg_file_name)
+            raise
+        finally:
+            temp_bg_file.close()
+        
+        os.rename(temp_bg_file_name, bg_file)
+        
     
     else:
         # Autocrop a file.
