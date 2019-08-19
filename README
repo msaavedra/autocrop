@@ -5,7 +5,7 @@ and save them independently.
 
 Pipenv can be used to install dependencies (currently only pillow and numpy).
 
-Basic usage of the module is as follows:
+Basic usage of the package is as follows:
 
 >>> from PIL import Image
 >>> from autocrop import MultiPartImage, Background
