@@ -29,8 +29,6 @@ if os.name == 'posix':
         'XDG_DATA_HOME',
         os.path.join(os.environ['HOME'], '.config')
         )
-elif sys.platform == 'win32' and 'APPDATA' in os.environ:
-    APP_CONF_DIR = os.environ['APPDATA']
 else:
     sys.stderr.write('Not a supported platform.\n')
     sys.exit(1)
