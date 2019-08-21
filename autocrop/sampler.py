@@ -10,7 +10,7 @@ class PixelSampler(object):
     
     It also has methods to get samples adjacent to a particular point.
     """
-    def __init__(self, image, dpi, precision=16):
+    def __init__(self, image, dpi, precision=50):
         self.image = image
         self.width, self.height = image.size
         self.data = image.load()

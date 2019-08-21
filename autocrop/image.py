@@ -9,8 +9,8 @@ class MultiPartImage(object):
     
     This is used, for example, to detect and access multiple photos that were
     scanned simultaneously in a flat-bed scanner. """
-    def __init__(self, image, background, dpi, precision=16,
-            deskew=True, contrast=10):
+    def __init__(self, image, background, dpi, precision=50,
+            deskew=True, contrast=15):
         self.contrast = contrast
         self.image = image
         self.dpi = dpi
@@ -106,13 +106,13 @@ class ImageSection(object):
         two are non-overlapping, while 1.0 means that the smaller is completely
         contained by the larger.
         """
-        if (self.top > other.bottom):
+        if self.top > other.bottom:
             return 0.0
-        if (self.bottom < other.top):
+        if self.bottom < other.top:
             return 0.0
-        if (self.right < other.left):
+        if self.right < other.left:
             return 0.0
-        if (self.left > other.right):
+        if self.left > other.right:
             return 0.0
         else:
             height = min(self.right, other.right) - max(self.left, other.left)
@@ -131,7 +131,7 @@ class ImageSection(object):
         self.area = self.height * self.width
     
     def merge_if_overlapping(self, other, margin=.15):
-        """Merge the section with another if they are significantly overlapping.
+        """Merge the section with another if they're significantly overlapping.
         
         This returns True if the sections are merged, and False otherwise.
         """
@@ -147,4 +147,3 @@ class ImageSection(object):
         The purpose of this is to filter out things like specks of dust.
         """
         return self.area > minimum_area
-    

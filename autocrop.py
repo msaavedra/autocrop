@@ -44,15 +44,14 @@ def scan(dpi, device=None):
             device = device[1]
         args.extend(['-d', device])
     args.extend(['--resolution', str(dpi), '--mode', 'Color'])
-    print(args)
     process = subprocess.Popen(args, stdout=subprocess.PIPE)
     output = process.communicate()[0]
     if process.returncode > 0:
         sys.exit(1)
         
     image = Image.open(BytesIO(output))
-    print(f'Scanned image attributes: {image.mode} {image.size}')
     return image
+
 
 def detect_scanners():
     process = subprocess.Popen(['scanimage', '-L'], stdout=subprocess.PIPE)
@@ -118,10 +117,10 @@ def parse_commandline_options():
         '-p', '--precision',
         nargs='?',
         type=int,
-        default=24,
+        default=50,
         help=(
             'The precision to use while cropping. Higher is better '
-            'but slower (default: 24).'
+            'but slower (default: 50).'
             )
         )
     parser.add_argument(
@@ -166,7 +165,7 @@ def parse_commandline_options():
         )
     options = parser.parse_args()
     options.deskew = not options.disable_deskew
-    options.contrast = options.contrast * 2
+    options.contrast = options.contrast * 3
     return options
 
 
@@ -183,7 +182,6 @@ def main(options):
     
     device_name = get_scanner_base_name(options.scanner)
     if device_name in bg_records:
-        print('loading sample background data')
         background = Background(*bg_records[device_name])
     else:
         background = Background()
@@ -204,7 +202,6 @@ def main(options):
         for device in devices:
             name = get_scanner_base_name(device)
             bg_records[name] = (background.medians, background.std_devs)
-        print(bg_records)
         temp_bg_file = tempfile.NamedTemporaryFile(
             mode='w',
             dir=AUTOCROP_DIR,
@@ -220,7 +217,6 @@ def main(options):
             temp_bg_file.close()
         
         os.rename(temp_bg_file_name, bg_file)
-        
     
     else:
         # Autocrop a file.

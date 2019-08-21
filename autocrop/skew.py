@@ -7,6 +7,7 @@ from PIL.Image import BICUBIC
 
 from .sampler import PixelSampler
 
+
 class SkewedImage(object):
     
     def __init__(self, image, background, contrast=10):
@@ -23,7 +24,9 @@ class SkewedImage(object):
             )
     
     def correct(self):
-        margins, angles = list(zip(*[self._get_margin(side) for side in self.sides]))
+        margins, angles = list(
+            zip(*[self._get_margin(side) for side in self.sides])
+            )
         rotated_img = self.image.rotate(degrees(numpy.median(angles)), BICUBIC)
         return rotated_img.crop(margins)
     
@@ -32,8 +35,11 @@ class SkewedImage(object):
         """
         distances = []
         angles = []
-        for start_x, start_y, r, g, b in side.run_parallel():
+        for start_x, start_y, _, _, _ in side.run_parallel():
             samples = side.run_perpendicular(start_x, start_y)
+            
+            x = start_x
+            y = start_y
             
             # First try to find any shadows along the image border.
             for x, y, r, g, b in samples:
@@ -44,7 +50,7 @@ class SkewedImage(object):
                     samples = side.run_perpendicular(start_x, start_y)
                     break
             
-            # Next try find any remaining background.
+            # Next try to find any remaining background.
             for x, y, r, g, b in samples:
                 if not self.background.matches((r, g, b), self.contrast):
                     break
@@ -83,6 +89,7 @@ class Top(object):
     def get_angle(self, prev_distance, x, y):
         return atan2(y - prev_distance, self.step)
 
+
 class Right(Top):
     
     def __init__(self, sampler):
@@ -98,6 +105,7 @@ class Right(Top):
     
     def get_angle(self, prev_distance, x, y):
         return atan2(prev_distance - x, self.step)
+
 
 class Bottom(Top):
     
@@ -131,4 +139,3 @@ class Left(Top):
         
     def get_angle(self, prev_distance, x, y):
         return atan2(x - prev_distance, self.step)
-
