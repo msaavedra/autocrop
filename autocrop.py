@@ -169,6 +169,69 @@ def parse_commandline_options():
     return options
 
 
+def list_all_scanners():
+    # List all scanners.
+    for name, device in detect_scanners():
+        print(name)
+
+
+def scan_and_save_background_data(options, background, bg_records, bg_file):
+    # Scan and save background data.
+    if options.scanner:
+        devices = [options.scanner]
+    else:
+        devices = ['', get_default_scanner()]
+    image = scan(options.resolution, options.scanner)
+    background.load_from_image(image, options.resolution)
+    for device in devices:
+        name = get_scanner_base_name(device)
+        bg_records[name] = (background.medians, background.std_devs)
+    temp_bg_file = tempfile.NamedTemporaryFile(
+        mode='w',
+        dir=AUTOCROP_DIR,
+        delete=False
+    )
+    temp_bg_file_name = temp_bg_file.name
+    try:
+        json.dump(bg_records, temp_bg_file)
+    except:
+        os.remove(temp_bg_file_name)
+        raise
+    finally:
+        temp_bg_file.close()
+
+    os.rename(temp_bg_file_name, bg_file)
+
+
+def autocrop_file(options, background):
+    # Autocrop a file.
+    date_name = time.strftime(
+        '%Y-%m-%d-%H%M%S',
+        time.localtime(time.time())
+    )
+    letters = iter('abcdefghijklmnopqrstuvwxyz')
+    if options.filename:
+        image = Image.open(options.filename)
+    else:
+        image = scan(options.resolution, options.scanner)
+    target = os.path.abspath(options.target)
+    if not os.path.exists(target):
+        os.makedirs(target)
+    multipart_image = MultiPartImage(
+        image,
+        background,
+        options.resolution,
+        options.precision,
+        options.deskew,
+        options.contrast
+    )
+    for crop in multipart_image:
+        file_name = '%s-%s.png' % (date_name, next(letters))
+        full_path = os.path.join(target, file_name)
+        print('Saving %s' % full_path)
+        crop.save(full_path)
+
+
 def main(options):
     bg_file = os.path.join(AUTOCROP_DIR, 'backgrounds.json')
     try:
@@ -187,64 +250,13 @@ def main(options):
         background = Background()
     
     if options.list:
-        # List all scanners.
-        for name, device in detect_scanners():
-            print(name)
+        list_all_scanners()
     
     elif options.blank:
-        # Scan and save background data.
-        if options.scanner:
-            devices = [options.scanner]
-        else:
-            devices = ['', get_default_scanner()]
-        image = scan(options.resolution, options.scanner)
-        background.load_from_image(image, options.resolution)
-        for device in devices:
-            name = get_scanner_base_name(device)
-            bg_records[name] = (background.medians, background.std_devs)
-        temp_bg_file = tempfile.NamedTemporaryFile(
-            mode='w',
-            dir=AUTOCROP_DIR,
-            delete=False
-            )
-        temp_bg_file_name = temp_bg_file.name
-        try:
-            json.dump(bg_records, temp_bg_file)
-        except:
-            os.remove(temp_bg_file_name)
-            raise
-        finally:
-            temp_bg_file.close()
-        
-        os.rename(temp_bg_file_name, bg_file)
+        scan_and_save_background_data(options, background, bg_records, bg_file)
     
     else:
-        # Autocrop a file.
-        date_name = time.strftime(
-            '%Y-%m-%d-%H%M%S',
-            time.localtime(time.time())
-            )
-        letters = iter('abcdefghijklmnopqrstuvwxyz')
-        if options.filename:
-            image = Image.open(options.filename)
-        else:
-            image = scan(options.resolution, options.scanner)
-        target = os.path.abspath(options.target)
-        if not os.path.exists(target):
-            os.makedirs(target)
-        multipart_image = MultiPartImage(
-            image,
-            background,
-            options.resolution,
-            options.precision,
-            options.deskew,
-            options.contrast
-            )
-        for crop in multipart_image:
-            file_name = '%s-%s.png' % (date_name, next(letters))
-            full_path = os.path.join(target, file_name)
-            print('Saving %s' % full_path)
-            crop.save(full_path)
+        autocrop_file(options, background)
 
 
 if __name__ == '__main__':
