@@ -10,13 +10,14 @@ class MultiPartImage(object):
     This is used, for example, to detect and access multiple photos that were
     scanned simultaneously in a flat-bed scanner. """
     def __init__(self, image, background, dpi, precision=50,
-            deskew=True, contrast=15):
+            deskew=True, contrast=15, shrink=3):
         self.contrast = contrast
         self.image = image
         self.dpi = dpi
         self.width, self.height = image.size
         self.precision = precision
         self.deskew = deskew
+        self.shrink = shrink
         self.samples = PixelSampler(image, dpi, precision)
         self.background = background
         self.sections = self._find_sections()
@@ -27,7 +28,7 @@ class MultiPartImage(object):
                 (section.left, section.top, section.right, section.bottom)
                 )
             if self.deskew:
-                skew = SkewedImage(image, self.background, self.contrast)
+                skew = SkewedImage(image, self.background, self.contrast, self.shrink)
                 image = skew.correct()
             yield image
     

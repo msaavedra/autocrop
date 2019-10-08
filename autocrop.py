@@ -155,6 +155,17 @@ def parse_commandline_options():
         help='Do not auto-correct the rotation of the photos after cropping.'
         )
     parser.add_argument(
+        '-k', '--shrink',
+        nargs='?',
+        type=int,
+        default=3,
+        help=(
+            'Number of pixels to shrink the area to be cropped. Avoid a possible small '
+            'white border at the cost of a slightly smaller image. Only relevant if '
+            'the image is deskewed (default: 3)'
+            )
+        )
+    parser.add_argument(
         'target',
         nargs='?',
         default=os.getcwd(),
@@ -223,7 +234,8 @@ def autocrop_file(options, background):
         options.resolution,
         options.precision,
         options.deskew,
-        options.contrast
+        options.contrast,
+        options.shrink
     )
     for crop in multipart_image:
         file_name = '%s-%s.png' % (date_name, next(letters))

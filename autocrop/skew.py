@@ -10,11 +10,12 @@ from .sampler import PixelSampler
 
 class SkewedImage(object):
     
-    def __init__(self, image, background, contrast=10):
+    def __init__(self, image, background, contrast=10, shrink=0):
         self.image = image
         self.width, self.height = image.size
         self.background = background
         self.contrast = contrast
+        self.shrink = shrink
         sampler = PixelSampler(image, dpi=1, precision=1)
         self.sides = (
             Left(sampler),
@@ -28,7 +29,11 @@ class SkewedImage(object):
             zip(*[self._get_margin(side) for side in self.sides])
             )
         rotated_img = self.image.rotate(degrees(numpy.median(angles)), BICUBIC)
-        return rotated_img.crop(margins)
+
+        # margins: (left, upper, right, lower)
+        shrunk_margins = tuple(v + self.shrink for v in margins[0:2]) + tuple(v - self.shrink for v in margins[2:4])
+
+        return rotated_img.crop(shrunk_margins)
     
     def _get_margin(self, side):
         """Find the distance and angle of the margin on a particular side.
