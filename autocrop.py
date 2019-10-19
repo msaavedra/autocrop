@@ -134,9 +134,9 @@ def parse_commandline_options():
         )
     parser.add_argument(
         '-f', '--filename',
-        nargs='?',
+        nargs='*',
         default='',
-        help='Do not scan. Instead, load the image from the given file.'
+        help='Do not scan. Instead, load the image from the given file(s).'
         )
     parser.add_argument(
         '-c', '--contrast',
@@ -214,17 +214,13 @@ def scan_and_save_background_data(options, background, bg_records, bg_file):
     os.rename(temp_bg_file_name, bg_file)
 
 
-def autocrop_file(options, background):
+def autocrop_file(options, image, background):
     # Autocrop a file.
     date_name = time.strftime(
         '%Y-%m-%d-%H%M%S',
         time.localtime(time.time())
     )
     letters = iter('abcdefghijklmnopqrstuvwxyz')
-    if options.filename:
-        image = Image.open(options.filename)
-    else:
-        image = scan(options.resolution, options.scanner)
     target = os.path.abspath(options.target)
     if not os.path.exists(target):
         os.makedirs(target)
@@ -268,7 +264,14 @@ def main(options):
         scan_and_save_background_data(options, background, bg_records, bg_file)
     
     else:
-        autocrop_file(options, background)
+        if options.filename:
+            for filename in options.filename:
+                print(f'autocrop {filename}')
+                image = Image.open(filename)
+                autocrop_file(options, image, background)
+        else:
+            image = scan(options.resolution, options.scanner)
+            autocrop_file(options, image, background)
 
 
 if __name__ == '__main__':
