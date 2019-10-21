@@ -224,6 +224,7 @@ def autocrop_file(options, image, background):
     target = os.path.abspath(options.target)
     if not os.path.exists(target):
         os.makedirs(target)
+
     multipart_image = MultiPartImage(
         image,
         background,
@@ -238,6 +239,9 @@ def autocrop_file(options, image, background):
         full_path = os.path.join(target, file_name)
         print('Saving %s' % full_path)
         crop.save(full_path)
+
+    full_path_original_image = os.path.join(target, 'tmp-full-scan.jpg')
+    multipart_image.image.save(full_path_original_image, quality=90)
 
 
 def main(options):

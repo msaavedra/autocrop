@@ -17,7 +17,7 @@ class TestSkewedImage(unittest.TestCase):
         shrink = 5  # shrink image on each side by 5 pixels to avoid any background
         test_image_path = os.path.join(IMAGE_PATH, '6-degrees-skewed.jpg')
         skewed = SkewedImage(Image.open(test_image_path), Background(), shrink=shrink)
-        deskewed = skewed.correct()
+        deskewed, margins, angle = skewed.correct()
         width, height = deskewed.size
         
         # The true measurements of the image
