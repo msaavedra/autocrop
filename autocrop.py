@@ -164,6 +164,16 @@ def parse_commandline_options(defaults):
             )
         )
     parser.add_argument(
+        '-t', '--filetype',
+        nargs='?',
+        type=str,
+        choices=['png', 'jpg'],
+        default=defaults.filetype,
+        help=(
+            'Filetype of the cropped images (default: png)'
+            )
+        )
+    parser.add_argument(
         'target',
         nargs='?',
         default=os.getcwd(),
@@ -189,7 +199,8 @@ def get_config_params():
         "resolution": 300,
         "shrink": 0,
         "contrast": 5,
-        "precision": 50
+        "precision": 50,
+        "filetype": "png"
     }
     return Config(os.path.join(AUTOCROP_DIR, 'config.json'), defaults=default_params)
 
@@ -243,7 +254,7 @@ def autocrop_file(options, image, background):
         options.shrink
     )
     for crop in multipart_image:
-        file_name = '%s-%s.png' % (date_name, next(letters))
+        file_name = f'{date_name}-{next(letters)}.{options.filetype}'
         full_path = os.path.join(target, file_name)
         print('Saving %s' % full_path)
         crop.save(full_path)
