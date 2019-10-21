@@ -17,12 +17,10 @@ import subprocess
 import sys
 import tempfile
 import time
-
+from simple_config import Config
 from PIL import Image
-
 from autocrop.image import MultiPartImage
 from autocrop.background import Background
-
 
 if os.name == 'posix':
     APP_CONF_DIR = os.environ.get(
@@ -86,7 +84,7 @@ def get_scanner_base_name(device):
     return name
 
 
-def parse_commandline_options():
+def parse_commandline_options(defaults):
     parser = argparse.ArgumentParser(
         description='A utility to crop multiple photos out of a scanned image.'
         )
@@ -107,7 +105,7 @@ def parse_commandline_options():
         '-r', '--resolution',
         nargs='?',
         type=int,
-        default=300,
+        default=defaults.resolution,
         help=(
             'The resolution, in dots per inch, to use while '
             'scanning (default: 300).'
@@ -117,7 +115,7 @@ def parse_commandline_options():
         '-p', '--precision',
         nargs='?',
         type=int,
-        default=50,
+        default=defaults.precision,
         help=(
             'The precision to use while cropping. Higher is better '
             'but slower (default: 50).'
@@ -143,7 +141,7 @@ def parse_commandline_options():
         nargs='?',
         type=int,
         choices=list(range(1, 11)),
-        default=5,
+        default=defaults.contrast,
         help=(
             'The amount of contrast (1-10) between background '
             'and foreground. (default: 5).'
@@ -158,7 +156,7 @@ def parse_commandline_options():
         '-k', '--shrink',
         nargs='?',
         type=int,
-        default=3,
+        default=defaults.shrink,
         help=(
             'Number of pixels to shrink the area to be cropped. Avoid a possible small '
             'white border at the cost of a slightly smaller image. Only relevant if '
@@ -184,6 +182,16 @@ def list_all_scanners():
     # List all scanners.
     for name, device in detect_scanners():
         print(name)
+
+
+def get_config_params():
+    default_params = {
+        "resolution": 300,
+        "shrink": 0,
+        "contrast": 5,
+        "precision": 50
+    }
+    return Config(os.path.join(AUTOCROP_DIR, 'config.json'), defaults=default_params)
 
 
 def scan_and_save_background_data(options, background, bg_records, bg_file):
@@ -244,7 +252,8 @@ def autocrop_file(options, image, background):
     multipart_image.image.save(full_path_original_image, quality=90)
 
 
-def main(options):
+def main():
+    options = parse_commandline_options(get_config_params())
     bg_file = os.path.join(AUTOCROP_DIR, 'backgrounds.json')
     try:
         with open(bg_file, 'r') as f:
@@ -279,4 +288,4 @@ def main(options):
 
 
 if __name__ == '__main__':
-    main(parse_commandline_options())
+    main()
