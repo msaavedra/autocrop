@@ -85,6 +85,7 @@ def get_scanner_base_name(device):
 
 
 def parse_commandline_options(defaults):
+    translate_bool = {False: 'store_true', True: 'store_false'}
     parser = argparse.ArgumentParser(
         description='A utility to crop multiple photos out of a scanned image.'
         )
@@ -174,6 +175,15 @@ def parse_commandline_options(defaults):
             )
         )
     parser.add_argument(
+        '-x', '--framed-crop',
+        action=translate_bool[defaults.framed_crop],
+        help=(
+            'Create a framed-crop-<name>.jpg, which frames the cropped area on the original'
+            'input image or scan with a rectangle. If the image is provided by the scanner'
+            '(not by -f <file>), an additional file original-<name>.jpg is created (default: False)'
+            )
+        )
+    parser.add_argument(
         'target',
         nargs='?',
         default=os.getcwd(),
@@ -200,7 +210,8 @@ def get_config_params():
         "shrink": 0,
         "contrast": 5,
         "precision": 50,
-        "filetype": "png"
+        "filetype": "png",
+        "framed_crop": False
     }
     return Config(os.path.join(AUTOCROP_DIR, 'config.json'), defaults=default_params)
 
@@ -233,7 +244,7 @@ def scan_and_save_background_data(options, background, bg_records, bg_file):
     os.rename(temp_bg_file_name, bg_file)
 
 
-def autocrop_file(options, image, background):
+def autocrop_file(options, image, background, filename_origin):
     # Autocrop a file.
     date_name = time.strftime(
         '%Y-%m-%d-%H%M%S',
@@ -259,8 +270,9 @@ def autocrop_file(options, image, background):
         print('Saving %s' % full_path)
         crop.save(full_path)
 
-    full_path_original_image = os.path.join(target, 'tmp-full-scan.jpg')
-    multipart_image.image.save(full_path_original_image, quality=90)
+    if options.framed_crop:
+        path_frame_cropped = os.path.join(target, f'framed-crop-{filename_origin}')
+        multipart_image.image.save(path_frame_cropped)
 
 
 def main():
@@ -292,10 +304,15 @@ def main():
             for filename in options.filename:
                 print(f'autocrop {filename}')
                 image = Image.open(filename)
-                autocrop_file(options, image, background)
+                autocrop_file(options, image, background, os.path.basename(filename))
         else:
             image = scan(options.resolution, options.scanner)
-            autocrop_file(options, image, background)
+            if options.framed_crop:
+                # If the input is provided by the scanner, save the scanned image in order to crop/deskew manually
+                target = os.path.abspath(options.target)
+                path_original = os.path.join(target, 'original-scan.jpg')
+                image.save(path_original)
+            autocrop_file(options, image, background, 'scan.jpg')
 
 
 if __name__ == '__main__':
