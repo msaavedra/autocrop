@@ -2,6 +2,8 @@
 
 from .sampler import PixelSampler
 from .skew import SkewedImage
+from PIL import Image, ImageDraw
+from numpy import mean
 
 
 class MultiPartImage(object):
@@ -10,13 +12,14 @@ class MultiPartImage(object):
     This is used, for example, to detect and access multiple photos that were
     scanned simultaneously in a flat-bed scanner. """
     def __init__(self, image, background, dpi, precision=50,
-            deskew=True, contrast=15):
+            deskew=True, contrast=15, shrink=3):
         self.contrast = contrast
         self.image = image
         self.dpi = dpi
         self.width, self.height = image.size
         self.precision = precision
         self.deskew = deskew
+        self.shrink = shrink
         self.samples = PixelSampler(image, dpi, precision)
         self.background = background
         self.sections = self._find_sections()
@@ -26,9 +29,16 @@ class MultiPartImage(object):
             image = self.image.crop(
                 (section.left, section.top, section.right, section.bottom)
                 )
+
             if self.deskew:
-                skew = SkewedImage(image, self.background, self.contrast)
-                image = skew.correct()
+                skew = SkewedImage(image, self.background, self.contrast, self.shrink)
+                image, margins, angle = skew.correct()
+            else:
+                margins = (0, 0, 0, 0)
+                angle = 0
+
+            self.frame_cropped_area(section, margins, angle)
+
             yield image
     
     def __len__(self):
@@ -67,6 +77,19 @@ class MultiPartImage(object):
         
         # Filter out sections smaller than 1 square inch before returning.
         return [s for s in sections if s > self.dpi ** 2]
+
+    def frame_cropped_area(self, section, margins, angle):
+        rectangle = Image.new("RGBA", self.image.size, (0, 0, 0, 0))
+
+        center = (mean([section.left, section.right]), mean([section.top, section.bottom]))
+        drawer = ImageDraw.Draw(rectangle)
+        xy = [section.left + margins[0], section.top + margins[1],
+              section.right - margins[0], section.top + margins[3]]
+
+        drawer.rectangle(xy, outline="yellow", width=8)
+        drawer.rectangle(xy, outline="blue", width=4)
+        rectangle_rotated = rectangle.rotate(-angle, center=center)
+        self.image = Image.alpha_composite(self.image.convert("RGBA"), rectangle_rotated).convert("RGB")
 
 
 class ImageSection(object):
